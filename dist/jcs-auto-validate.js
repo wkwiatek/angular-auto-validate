@@ -1,5 +1,5 @@
 /*
- * angular-auto-validate - v1.18.6 - 2015-04-16
+ * angular-auto-validate - v1.18.6 - 2015-05-12
  * https://github.com/jonsamwell/angular-auto-validate
  * Copyright (c) 2015 Jon Samwell (http://www.jonsamwell.com)
  */
@@ -729,26 +729,12 @@
         .factory('foundation5ElementModifier', [
 
             function () {
-                var reset = function (el, inputEl) {
-                        angular.forEach(el.find('small'), function (smallEl) {
-                            if (angular.element(smallEl).hasClass('error')) {
-                                angular.element(smallEl).remove();
-                            }
-                        });
-
-                        inputEl.removeClass('error');
-                    },
-                    findParentColumn = function (el) {
-                        var parent = el;
-                        for (var i = 0; i <= 3; i += 1) {
-                            if (parent !== undefined && parent.hasClass('columns')) {
-                                break;
-                            } else if (parent !== undefined) {
-                                parent = parent.parent();
-                            }
+                var reset = function (el) {
+                        var nextEl = el.next();
+                        if (nextEl.hasClass('error')) {
+                            nextEl.remove();
                         }
-
-                        return parent;
+                        el.removeClass('error');
                     },
 
                     /**
@@ -763,8 +749,7 @@
                      * @param {Element} el - The input control element that is the target of the validation.
                      */
                     makeValid = function (el) {
-                        var parentColumn = findParentColumn(el);
-                        reset(parentColumn && parentColumn.length > 0 ? parentColumn : el, el);
+                        reset(el);
                     },
 
                     /**
@@ -779,14 +764,10 @@
                      * @param {Element} el - The input control element that is the target of the validation.
                      */
                     makeInvalid = function (el, errorMsg) {
-                        var parentColumn = findParentColumn(el),
-                            helpTextEl;
-                        reset(parentColumn || el, el);
+                        var helpTextEl = angular.element('<small class="error">' + errorMsg + '</small>');
+                        reset(el);
                         el.addClass('error');
-                        if (parentColumn) {
-                            helpTextEl = angular.element('<small class="error">' + errorMsg + '</small>');
-                            parentColumn.append(helpTextEl);
-                        }
+                        el.after(helpTextEl);
                     },
 
                     /**
