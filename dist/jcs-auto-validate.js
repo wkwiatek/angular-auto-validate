@@ -1,5 +1,5 @@
 /*
- * angular-auto-validate - v1.18.6 - 2015-05-12
+ * angular-auto-validate - v1.18.6 - 2015-05-15
  * https://github.com/jonsamwell/angular-auto-validate
  * Copyright (c) 2015 Jon Samwell (http://www.jonsamwell.com)
  */
@@ -878,7 +878,7 @@
                             };
 
                         if (frmOptions.disabled === false) {
-                            if ((frmOptions.forceValidation || (shouldValidateElement(el, frmOptions) && modelCtrl && needsValidation))) {
+                            if ((frmOptions.forceValidation || (modelCtrl && needsValidation)) && shouldValidateElement(el, frmOptions)) {
                                 isValid = !modelCtrl.$invalid;
 
                                 if (frmOptions.removeExternalValidationErrorsOnSubmit && modelCtrl.removeAllExternalValidation) {

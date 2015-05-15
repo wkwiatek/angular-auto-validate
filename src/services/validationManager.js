@@ -82,7 +82,7 @@
                             };
 
                         if (frmOptions.disabled === false) {
-                            if ((frmOptions.forceValidation || (shouldValidateElement(el, frmOptions) && modelCtrl && needsValidation))) {
+                            if ((frmOptions.forceValidation || (modelCtrl && needsValidation)) && shouldValidateElement(el, frmOptions)) {
                                 isValid = !modelCtrl.$invalid;
 
                                 if (frmOptions.removeExternalValidationErrorsOnSubmit && modelCtrl.removeAllExternalValidation) {
