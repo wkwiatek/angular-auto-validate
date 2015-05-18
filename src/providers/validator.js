@@ -276,6 +276,7 @@
                     forceValidation: false,
                     disabled: false,
                     validateNonVisibleControls: false,
+                    displayErrorsAfterSubmit: false,
                     removeExternalValidationErrorsOnSubmit: true
                 };
 
