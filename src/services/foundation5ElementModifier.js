@@ -5,6 +5,9 @@
         .factory('foundation5ElementModifier', [
 
             function () {
+                /**
+                 * @param {Element} el - The input control element that is the target of the validation.
+                 */
                 var reset = function (el) {
                         var nextEl = el.next();
                         if (nextEl.hasClass('error')) {
@@ -40,10 +43,9 @@
                      * @param {Element} el - The input control element that is the target of the validation.
                      */
                     makeInvalid = function (el, errorMsg) {
-                        var helpTextEl = angular.element('<small class="error">' + errorMsg + '</small>');
                         reset(el);
                         el.addClass('error');
-                        el.after(helpTextEl);
+                        el.after(angular.element('<small class="error">' + errorMsg + '</small>'));
                     },
 
                     /**

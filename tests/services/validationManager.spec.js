@@ -27,7 +27,10 @@
                 return {
                     forceValidation: false,
                     disabled: false,
-                    validateNonVisibleControls: false
+                    validateNonVisibleControls: false,
+                    displayErrorsAfterSubmit: false,
+                    removeExternalValidationErrorsOnSubmit: true,
+                    errorsAllowedOnSubmit: []
                 };
             };
 
