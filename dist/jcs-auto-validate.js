@@ -1,5 +1,5 @@
 /*
- * angular-auto-validate - v1.18.6 - 2015-05-18
+ * angular-auto-validate - v1.18.6 - 2015-05-27
  * https://github.com/jonsamwell/angular-auto-validate
  * Copyright (c) 2015 Jon Samwell (http://www.jonsamwell.com)
  */
@@ -288,7 +288,8 @@
                     disabled: false,
                     validateNonVisibleControls: false,
                     displayErrorsAfterSubmit: false,
-                    removeExternalValidationErrorsOnSubmit: true
+                    removeExternalValidationErrorsOnSubmit: true,
+                    errorsAllowedOnSubmit: []
                 };
 
                 this.$get = [
@@ -736,6 +737,9 @@
         .factory('foundation5ElementModifier', [
 
             function () {
+                /**
+                 * @param {Element} el - The input control element that is the target of the validation.
+                 */
                 var reset = function (el) {
                         var nextEl = el.next();
                         if (nextEl.hasClass('error')) {
@@ -771,10 +775,9 @@
                      * @param {Element} el - The input control element that is the target of the validation.
                      */
                     makeInvalid = function (el, errorMsg) {
-                        var helpTextEl = angular.element('<small class="error">' + errorMsg + '</small>');
                         reset(el);
                         el.addClass('error');
-                        el.after(helpTextEl);
+                        el.after(angular.element('<small class="error">' + errorMsg + '</small>'));
                     },
 
                     /**
@@ -806,13 +809,44 @@
 
     angular.module('jcs-autoValidate')
         .factory('jcs-elementUtils', [
-            function () {
-                var isElementVisible = function (el) {
+            'validator',
+            function (validator) {
+
+                function isElementVisible(el) {
                     return el[0].offsetWidth > 0 && el[0].offsetHeight > 0;
-                };
+                }
+
+                /**
+                 * @param {FormController} formController - Instance of FormController
+                 * @param {Array.<string>} excludedErrors - Array contains list of excluded errors names
+                 */
+                function hasErrorsOtherThanExcluded(formController, excludedErrors) {
+                    /**
+                     * @param {string} errorName - Name of an error
+                     * @return {boolean} Returns true if specified error name is in the list of exluded errors, otherwise false
+                     */
+                    var isExludedError = function (errorName) {
+                        return excludedErrors.indexOf(errorName) > -1;
+                    };
+
+                    for (var errorName in formController.$error) {
+                        if (!isExludedError(errorName) && formController.$error[errorName]) {
+                            return true;
+                        }
+                    }
+
+                    return false;
+                }
+
+                function getFormOptions(el) {
+                    var frmCtrl = angular.element(el).controller('form');
+                    return frmCtrl !== undefined && frmCtrl !== null ? frmCtrl.autoValidateFormOptions : validator.defaultFormValidationOptions;
+                }
 
                 return {
-                    isElementVisible: isElementVisible
+                    isElementVisible: isElementVisible,
+                    hasErrorsOtherThanExcluded: hasErrorsOtherThanExcluded,
+                    getFormOptions: getFormOptions
                 };
             }
         ]);
@@ -829,8 +863,7 @@
                     },
 
                     getFormOptions = function (el) {
-                        var frmCtrl = angular.element(el).controller('form');
-                        return frmCtrl !== undefined && frmCtrl !== null ? frmCtrl.autoValidateFormOptions : validator.defaultFormValidationOptions;
+                        return elementUtils.getFormOptions(el);
                     },
 
                     /**
@@ -873,11 +906,14 @@
                             errorType,
                             findErrorType = function ($errors) {
                                 var keepGoing = true,
+                                    isErrorAllowedOnSubmit = false,
                                     errorTypeToReturn;
+
                                 angular.forEach($errors, function (status, errortype) {
-                                    if (keepGoing && status) {
+                                    if (status && (keepGoing || isErrorAllowedOnSubmit)) {
                                         keepGoing = false;
                                         errorTypeToReturn = errortype;
+                                        isErrorAllowedOnSubmit = frmOptions.errorsAllowedOnSubmit.indexOf(errorTypeToReturn) > -1;
                                     }
                                 });
 
@@ -1140,28 +1176,34 @@
                 '$delegate',
                 '$parse',
                 'validationManager',
-                function ($delegate, $parse, validationManager) {
+                'jcs-elementUtils',
+                function ($delegate, $parse, validationManager, elementUtils) {
                     $delegate[0].compile = function ($element, attrs) {
                         var fn = $parse(attrs.ngSubmit),
-                            force = attrs.ngSubmitForce === 'true';
+                            isForcedSubmit = attrs.ngSubmitForce === 'true';
 
                         return function (scope, element) {
                             function handlerFn(event) {
                                 scope.$apply(function () {
+                                    var isFormValid;
+                                    var isDisabled;
+                                    var errorsAllowedOnSubmit;
+                                    var hasOnlyAllowedErrors;
                                     var formController = $element.controller('form');
-                                    if (formController !== undefined &&
-                                        formController !== null &&
-                                        formController.autoValidateFormOptions &&
-                                        formController.autoValidateFormOptions.disabled === true) {
+
+                                    if (formController === undefined || formController === null || !formController.autoValidateFormOptions) {
+                                        return;
+                                    }
+
+                                    isFormValid = validationManager.validateForm(element);
+                                    isDisabled = formController.autoValidateFormOptions.disabled === true;
+                                    errorsAllowedOnSubmit = formController.autoValidateFormOptions.errorsAllowedOnSubmit;
+                                    hasOnlyAllowedErrors = errorsAllowedOnSubmit.length > 0 && !elementUtils.hasErrorsOtherThanExcluded(formController, errorsAllowedOnSubmit);
+
+                                    if (isDisabled || isForcedSubmit || isFormValid || (!isFormValid && hasOnlyAllowedErrors)) {
                                         fn(scope, {
                                             $event: event
                                         });
-                                    } else {
-                                        if (validationManager.validateForm(element) || force === true) {
-                                            fn(scope, {
-                                                $event: event
-                                            });
-                                        }
                                     }
                                 });
                             }
